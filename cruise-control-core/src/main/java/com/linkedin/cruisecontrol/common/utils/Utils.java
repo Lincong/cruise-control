@@ -7,6 +7,7 @@ package com.linkedin.cruisecontrol.common.utils;
 import com.linkedin.cruisecontrol.exception.CruiseControlException;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Objects;
 
 
 public class Utils {
@@ -56,6 +57,17 @@ public class Utils {
     } else {
       return cl;
     }
+  }
+
+  /**
+   * Throw a NullPointerException if the given object is null
+   * @param obj object to check null
+   * @param objName name of the object
+   * @return the object passed in
+   */
+  public static <T> T validateNotNull(T obj, String objName) {
+    Objects.requireNonNull(obj, objName + " cannot be null.");
+    return obj;
   }
 
   /**
