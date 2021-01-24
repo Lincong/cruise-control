@@ -153,7 +153,9 @@ public class MinTopicLeadersPerBrokerGoal extends AbstractGoal {
   @Override
   protected void initGoalState(ClusterModel clusterModel, OptimizationOptions optimizationOptions)
       throws OptimizationFailureException {
+    LOG.info("initGoalState() starts");
     if (!hasTopicsWithMinLeadersPerBrokerPattern()) {
+      LOG.info("initGoalState() no topic-with-min-leaders-per-broker-pattern");
       return;
     }
     // Sanity checks
@@ -325,12 +327,14 @@ public class MinTopicLeadersPerBrokerGoal extends AbstractGoal {
   @Override
   protected void updateGoalState(ClusterModel clusterModel, OptimizationOptions optimizationOptions)
       throws OptimizationFailureException {
+    LOG.info("updateGoalState() is called");
     // Sanity check: No self-healing eligible replica should remain at a dead broker/disk.
     GoalUtils.ensureNoOfflineReplicas(clusterModel, name());
     // Sanity check: No replica should be moved to a broker, which used to host any replica of the same partition on its broken disk.
     GoalUtils.ensureReplicasMoveOffBrokersWithBadDisks(clusterModel, name());
     ensureBrokersAllHaveEnoughLeaderReplicaOfTopics(clusterModel, optimizationOptions);
     finish();
+    LOG.info("updateGoalState() finished");
   }
 
   private void ensureBrokersAllHaveEnoughLeaderReplicaOfTopics(ClusterModel clusterModel, OptimizationOptions optimizationOptions)
@@ -366,18 +370,23 @@ public class MinTopicLeadersPerBrokerGoal extends AbstractGoal {
                                     ClusterModel clusterModel,
                                     Set<Goal> optimizedGoals,
                                     OptimizationOptions optimizationOptions) throws OptimizationFailureException {
+    LOG.info("rebalanceForBroker() called on broker = {}", broker);
+
     LOG.debug("balancing broker {}, optimized goals = {}", broker, optimizedGoals);
     moveAwayOfflineReplicas(broker, clusterModel, optimizedGoals, optimizationOptions);
     Set<String> mustHaveLeaderReplicaPerBrokerTopicNames = topicsWithMinLeadersPerBrokerNames(clusterModel);
     if (mustHaveLeaderReplicaPerBrokerTopicNames.isEmpty()) {
+      LOG.info("rebalanceForBroker() on broker = {} mustHaveLeaderReplicaPerBrokerTopicNames is true", broker);
       return; // Early termination to avoid some unnecessary computation
     }
     if (!brokerIsEligibleToHaveAnyLeaderReplica(broker, optimizationOptions)) {
+      LOG.info("rebalanceForBroker() on broker = {} brokerIsEligibleToHaveAnyLeaderReplica is false", broker);
       return;
     }
     for (String topicMustHaveLeaderReplicaPerBroker : mustHaveLeaderReplicaPerBrokerTopicNames) {
       maybeMoveLeaderReplicaOfTopicToBroker(topicMustHaveLeaderReplicaPerBroker, broker, clusterModel, optimizedGoals, optimizationOptions);
     }
+    LOG.info("rebalanceForBroker() on broker = {} finished", broker);
   }
 
   private void maybeMoveLeaderReplicaOfTopicToBroker(String topicMustHaveLeaderReplicaPerBroker,
